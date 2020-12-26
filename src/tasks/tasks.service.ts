@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { User } from 'src/auth/user.entity';
 
 import { CreateTaskDTO } from './dto/create-task.dto';
 import { GetTasksFilterDTO } from './dto/get-tasks-filter.dto';
@@ -15,16 +16,21 @@ export class TasksService {
     private taskRepository: TaskRepository,
   ) {}
 
-  getAllTasks(dto: GetTasksFilterDTO): Promise<Task[]> {
-    return this.taskRepository.getTasks(dto);
+  getAllTasks(dto: GetTasksFilterDTO, user: User): Promise<Task[]> {
+    return this.taskRepository.getTasks(dto, user);
   }
 
-  async createTask(dto: CreateTaskDTO): Promise<Task> {
-    return this.taskRepository.createTask(dto);
+  async createTask(dto: CreateTaskDTO, user: User): Promise<Task> {
+    return this.taskRepository.createTask(dto, user);
   }
 
-  async getTaskById(id: number): Promise<Task> {
-    const task = await this.taskRepository.findOne(id);
+  async getTaskById(id: number, user: User): Promise<Task> {
+    const task = await this.taskRepository.findOne({
+      where: {
+        id,
+        userId: user?.id,
+      },
+    });
 
     if (task) {
       return task;
@@ -33,16 +39,23 @@ export class TasksService {
     throw new NotFoundException(`Task with id ${id} not found`);
   }
 
-  async deleteTask(id: number): Promise<void> {
-    const { affected } = await this.taskRepository.delete(id);
+  async deleteTask(id: number, user: User): Promise<void> {
+    const { affected } = await this.taskRepository.delete({
+      id,
+      userId: user.id,
+    });
 
     if (affected === 0) {
       throw new NotFoundException(`Task with id ${id} not found`);
     }
   }
 
-  async updateTaskStatus(id: number, status: TaskStatus): Promise<Task> {
-    const task = await this.getTaskById(id);
+  async updateTaskStatus(
+    id: number,
+    status: TaskStatus,
+    user: User,
+  ): Promise<Task> {
+    const task = await this.getTaskById(id, user);
     task.status = status;
 
     await task.save();
