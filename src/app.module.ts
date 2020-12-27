@@ -5,11 +5,13 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TasksModule } from './tasks/tasks.module';
 import { AuthModule } from './auth/auth.module';
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      ignoreEnvFile: true,
+      ignoreEnvFile: isProduction,
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -30,7 +32,9 @@ import { AuthModule } from './auth/auth.module';
         ),
         database: configService.get<string>('DB_NAME', process.env.DB_NAME),
         entities: [`${__dirname}/**/*.entity.{js,ts}`],
-        synchronize: true,
+        synchronize: Boolean(
+          configService.get<boolean>('DB_SYNCHRONIZE', false),
+        ),
       }),
       inject: [ConfigService],
     }),
