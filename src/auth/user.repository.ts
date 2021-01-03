@@ -13,7 +13,7 @@ export class UserRepository extends Repository<User> {
   async signUp(dto: AuthCredentialsDto): Promise<void> {
     const { username, password } = dto;
 
-    const user = new User();
+    const user = this.create();
 
     user.username = username;
     user.salt = await bcrypt.genSalt();
@@ -42,7 +42,7 @@ export class UserRepository extends Repository<User> {
     }
   }
 
-  private async hashPassword(password: string, salt: string): Promise<string> {
+  async hashPassword(password: string, salt: string): Promise<string> {
     return bcrypt.hash(password, salt);
   }
 }
